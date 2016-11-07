@@ -134,4 +134,16 @@ ENV/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
-0
+
+# Clion
+.idea
+cpp/bin
+
+# CMake
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+
+
+*~
