@@ -16,6 +16,7 @@ public:
     Graph(AdjList& a);
 
     const AdjList& getAdj() const;
+    
     void addEdge(const Edge& e);
     void serialize(std::string fileName) const;
 
@@ -31,6 +32,7 @@ public:
     std::vector<int> findCycle();
     void colorAsTree();
     std::vector<int> legalColoringsOfEdge(const int v1, const int v2) const;
+    void moveEdgeToAnotherGraph(Graph& other, const int v1, const int v2);
 private:
     void deserialize(std::string fileName);
 

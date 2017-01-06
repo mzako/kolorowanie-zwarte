@@ -369,3 +369,30 @@ std::vector<int> Graph::legalColoringsOfEdge(const int v1, const int v2) const {
     }
     return legalsOfEdge;
 }
+
+void Graph::moveEdgeToAnotherGraph(Graph& other, const int v1, const int v2) {
+    int i = 0, color;
+    for(auto edge : adj.at(v1)) {
+        if((edge.v1 == v1 && edge.v2 == v2) || (edge.v2 == v1 && edge.v1 == v2)) {
+            color = edge.color;
+            adj.at(v1).erase(adj.at(v1).begin() + i);
+            if(adj.at(v1).size() == 0) {
+                adj.erase(v1);
+            }
+            break;
+        }
+        i++;
+    }
+    i = 0;
+    for(auto edge : adj.at(v2)) {
+        if((edge.v1 == v1 && edge.v2 == v2) || (edge.v2 == v1 && edge.v1 == v2)) {
+            adj.at(v2).erase(adj.at(v2).begin() + i);
+            if(adj.at(v2).size() == 0) {
+                adj.erase(v2);
+            }
+            break;
+        }
+        i++;
+    }
+    other.addEdge(Edge(v1, v2, color));
+}

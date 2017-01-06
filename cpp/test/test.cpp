@@ -51,6 +51,40 @@ Graph generateSimpleTreeGraph() {
     return Graph(a);
 }
 
+Graph generateASimpleForestGraph() {
+    AdjList a;
+
+    for(unsigned i = 1; i <= 10; i++) {
+        a[i] = std::vector<Edge>();
+    }
+
+    for(unsigned i = 1; i < 3; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    a[1].emplace_back(1, 4);
+    a[4].emplace_back(4, 1);
+
+    for(unsigned i = 4; i < 6; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    for(unsigned i = 7; i < 10; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    return Graph(a);
+}
+
+Graph generateEmptyGraph() {
+    AdjList a;
+    return Graph(a);
+}
+
+
 bool containersEqual(std::vector<int> a, std::vector<int> b) {
     std::sort(a.begin(), a.end());
     std::sort(b.begin(), b.end());
@@ -321,6 +355,53 @@ TEST(Tree, ColoringATreeWorks) {
         }
         EXPECT_FALSE(g.areGaps(v.first));
     }
+}
+
+TEST(Graph, MovingEdgeToOutputRemovesItFromGraph) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    auto outG = generateEmptyGraph();
+    int numEdgesBefore = 0;
+    for(auto& v : g.getAdj()) {
+        for(auto& e : v.second) {
+            numEdgesBefore++;
+        }
+    }
+    numEdgesBefore /= 2;
+    g.moveEdgeToAnotherGraph(outG, 2, 3);
+    int numEdgesAfter = 0;
+    for(auto& v : g.getAdj()) {
+        for(auto& e : v.second) {
+            numEdgesAfter++;
+        }
+    }
+    numEdgesAfter /= 2;
+    EXPECT_EQ(1, numEdgesBefore - numEdgesAfter);
+}
+
+TEST(Graph, MovingAllEdgesOfVertexRemovesVertex) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    auto outG = generateEmptyGraph();
+    int numVerticesBefore = g.getAdj().size();
+    g.moveEdgeToAnotherGraph(outG, 2, 3);
+    g.moveEdgeToAnotherGraph(outG, 1, 2);
+    int numVerticesAfter = g.getAdj().size();
+    EXPECT_EQ(1, numVerticesBefore - numVerticesAfter);
+}
+
+TEST(Graph, MovingEdgeToAnotherGraphMakesItAppearInIt) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    auto outG = generateEmptyGraph();
+    EXPECT_EQ(0, outG.getAdj().size());
+    g.moveEdgeToAnotherGraph(outG, 2, 3);
+    EXPECT_EQ(2, outG.getAdj().size());
+    const auto& v2 = outG.getAdj().at(2);
+    const auto& v3 = outG.getAdj().at(3);
+    EXPECT_EQ(1, v2.size());
+    EXPECT_EQ(1, v2.size());
+    EXPECT_EQ(2, v2[0].v1);
+    EXPECT_EQ(3, v2[0].v2);
+    EXPECT_EQ(3, v3[0].v1);
+    EXPECT_EQ(2, v3[0].v2);
 }
 
 int main(int argc, char **argv) {
