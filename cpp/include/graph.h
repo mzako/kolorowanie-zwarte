@@ -29,6 +29,8 @@ public:
     int getLowestColor(const int vertexIndex) const;
     int getHighestColor(const int vertexIndex) const;
     std::vector<int> findCycle();
+    void colorAsTree();
+    std::vector<int> legalColoringsOfEdge(const int v1, const int v2) const;
 private:
     void deserialize(std::string fileName);
 

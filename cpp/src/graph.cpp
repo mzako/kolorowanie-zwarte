@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <set>
 
 #define LOGLEVEL 2
 
@@ -110,27 +111,8 @@ bool Graph::colorPath(std::vector<Edge*>::iterator edge, std::vector<Edge*>::ite
 
     const int currentVertexIdx = (*edge)->v1, nextVertexIdx = (*edge)->v2;
 
-    const auto legalsOfCurrent = legalColoringsOf(currentVertexIdx);
-    const auto legalsOfNext = legalColoringsOf(nextVertexIdx);
-    std::vector<int> legalsOfEdge;
-    if(legalsOfCurrent.empty() && !legalsOfNext.empty()) {
-        // empty means any color is fine
-        legalsOfEdge = legalsOfNext;
-    } else if(legalsOfNext.empty() && !legalsOfCurrent.empty()) {
-        // empty means any color is fine
-        legalsOfEdge = legalsOfCurrent;
-    } else if(legalsOfNext.empty() && legalsOfCurrent.empty()) {
-        // if everything is legal, start with color "1"
-        legalsOfEdge.emplace_back(1);
-    } else {
-        for(const int c : legalsOfCurrent) {
-            for(const int n : legalsOfNext) {
-                if(c == n) {
-                    legalsOfEdge.emplace_back(c);
-                }
-            }
-        }
-    }
+    const std::vector<int> legalsOfEdge = legalColoringsOfEdge(currentVertexIdx, 
+        nextVertexIdx);
 
     for(const int currentColor : legalsOfEdge) {
         colorEdge(currentVertexIdx, nextVertexIdx, currentColor);
@@ -324,4 +306,66 @@ std::vector<int> Graph::findCycleRecur(const int startingVertexIdx,
     }
 
     return std::vector<int>{}; // return empty
+}
+
+void Graph::colorAsTree() {
+    int numUncolored = 0;
+    for(auto& v : adj) {
+        for(auto& e : v.second) {
+            numUncolored++;
+        }
+    }
+    numUncolored /= 2;
+
+    std::cout << "COLORING TREE WITH " << numUncolored << " EDGES" << std::endl;
+
+    std::set<int> setK;
+    const auto& startingEdge = adj.begin()->second[0];
+
+    setK.insert(startingEdge.v1);
+    setK.insert(startingEdge.v2);
+    colorEdge(startingEdge.v1, startingEdge.v2, 1);
+    numUncolored -= 1;
+    std::cout << "NUM UNCOLORED: " << numUncolored << std::endl;
+
+    while(numUncolored != 0) {
+
+        for(int v : setK) {
+            for(auto& edge : adj[v]) {
+                if(edge.color != 0) {
+                    continue;
+                }
+                std::vector<int> cols = legalColoringsOfEdge(edge.v1, edge.v2);
+                colorEdge(edge.v1, edge.v2, cols[0]);
+                setK.insert(edge.v1);
+                setK.insert(edge.v2);
+                numUncolored -= 1;
+                std::cout << "NUM UNCOLORED: " << numUncolored << std::endl;
+            }
+        }
+    }
+}
+
+std::vector<int> Graph::legalColoringsOfEdge(const int v1, const int v2) const {
+    const auto legalsOfV1 = legalColoringsOf(v1), legalsOfV2 = legalColoringsOf(v2);
+    std::vector<int> legalsOfEdge;
+    if(legalsOfV1.empty() && !legalsOfV2.empty()) {
+        // empty means any color is fine
+        legalsOfEdge = legalsOfV2;
+    } else if(legalsOfV2.empty() && !legalsOfV1.empty()) {
+        // empty means any color is fine
+        legalsOfEdge = legalsOfV1;
+    } else if(legalsOfV2.empty() && legalsOfV1.empty()) {
+        // if everything is legal, start with color "1"
+        legalsOfEdge.emplace_back(1);
+    } else {
+        for(const int a : legalsOfV1) {
+            for(const int b : legalsOfV2) {
+                if(a == b) {
+                    legalsOfEdge.emplace_back(a);
+                }
+            }
+        }
+    }
+    return legalsOfEdge;
 }

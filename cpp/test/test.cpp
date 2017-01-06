@@ -32,10 +32,16 @@ Graph generateSimpleTreeGraph() {
         a[i+1].emplace_back(i+1, i);
     }
 
+    a[1].emplace_back(1, 4);
+    a[4].emplace_back(4, 1);
+
     for(unsigned i = 4; i < 6; i++) {
         a[i].emplace_back(i, i+1);
         a[i+1].emplace_back(i+1, i);
     }
+
+    a[5].emplace_back(5, 7);
+    a[7].emplace_back(7, 5);
 
     for(unsigned i = 7; i < 10; i++) {
         a[i].emplace_back(i, i+1);
@@ -108,6 +114,16 @@ TEST(Backtracking, DeterminingLegalColoringsOfAVertexWithLowestColor1Works) {
     g.addEdge(Edge(1, 2000, 2));
     const std::vector<int> expectedColors{3, 4};
     const std::vector<int> actual = g.legalColoringsOf(1);
+    EXPECT_TRUE(containersEqual(actual, expectedColors));
+}
+
+TEST(Backtracking, DeterminingLegalColoringsOfEdgeWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    g.addEdge(Edge(1, 1000, 3));
+    g.addEdge(Edge(1, 2000, 4));
+    g.addEdge(Edge(2, 3000, 6));
+    const std::vector<int> expectedColors{5};
+    const std::vector<int> actual = g.legalColoringsOfEdge(1, 2);
     EXPECT_TRUE(containersEqual(actual, expectedColors));
 }
 
@@ -296,7 +312,16 @@ TEST(Cycle, FindingCycleInTreeReturnsEmpty) {
     EXPECT_EQ(0, cycle.size());
 }
 
-
+TEST(Tree, ColoringATreeWorks) {
+    auto g = generateSimpleTreeGraph();
+    g.colorAsTree();
+    for(const auto& v : g.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_FALSE(g.areGaps(v.first));
+    }
+}
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
