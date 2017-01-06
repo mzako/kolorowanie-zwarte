@@ -8,6 +8,7 @@
 #include "edge.h"
 
 using AdjList = std::map<int, std::vector<Edge>>;
+using VertexLabels = std::map<int, bool>;
 
 class Graph {
 public:
@@ -27,10 +28,14 @@ public:
     bool areGaps(const int vertexIndex) const;
     int getLowestColor(const int vertexIndex) const;
     int getHighestColor(const int vertexIndex) const;
+    std::vector<int> findCycle();
 private:
     void deserialize(std::string fileName);
 
+    std::vector<int> findCycleRecur(const int startingVertexIdx, 
+        const int currentVertexIdx, const int prevIdx);
 
     AdjList adj;
+    VertexLabels labels;
 };
 #endif //GRAPH_H

@@ -264,3 +264,64 @@ int Graph::getHighestColor(const int vertexIndex) const {
     }
     return highestColor;
 }
+
+std::vector<int> Graph::findCycle() {
+    // cleanup labels
+    for(auto& keyval : adj) {
+        labels[keyval.first] = false;
+    }
+
+    const int startingVertexIdx = labels.begin()->first;
+
+    auto result = findCycleRecur(startingVertexIdx, startingVertexIdx, startingVertexIdx);
+
+    if(result.size()) {
+        std::reverse(result.begin(), result.end());
+        result.emplace_back(startingVertexIdx);
+
+        std::cout << "LOOP FOUND: ";
+        for(const auto& el : result) {
+            std::cout << el << ", ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "NO LOOP FOUND" << std::endl;
+    }
+
+    // cleanup labels
+    for(auto& keyval : labels) {
+        keyval.second = false;
+    }
+
+    return result;
+}
+
+std::vector<int> Graph::findCycleRecur(const int startingVertexIdx, 
+    const int currentVertexIdx, const int prevIdx) {
+    labels[currentVertexIdx] = true;
+
+    for(auto& edge : adj.at(currentVertexIdx)) {
+        const int neighbourIdx = edge.v2;
+        if(neighbourIdx == prevIdx) {
+            continue;
+        }
+
+        // loop found right now?
+        if(neighbourIdx == startingVertexIdx) {
+            return std::vector<int>{currentVertexIdx};
+        }
+        
+        if(labels.at(neighbourIdx) == false) {
+
+            auto result = findCycleRecur(startingVertexIdx, edge.v2, currentVertexIdx);
+
+            // loop found by someone we called?
+            if(!result.empty()) {
+                result.emplace_back(currentVertexIdx);
+                return result;
+            }
+        }
+    }
+
+    return std::vector<int>{}; // return empty
+}

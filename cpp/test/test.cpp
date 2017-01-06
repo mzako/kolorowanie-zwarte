@@ -20,6 +20,31 @@ Graph generateSimpleLoopGraphWith10Vertices() {
     return Graph(a);
 }
 
+Graph generateSimpleTreeGraph() {
+    AdjList a;
+
+    for(unsigned i = 1; i <= 10; i++) {
+        a[i] = std::vector<Edge>();
+    }
+
+    for(unsigned i = 1; i < 3; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    for(unsigned i = 4; i < 6; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    for(unsigned i = 7; i < 10; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    return Graph(a);
+}
+
 bool containersEqual(std::vector<int> a, std::vector<int> b) {
     std::sort(a.begin(), a.end());
     std::sort(b.begin(), b.end());
@@ -253,6 +278,25 @@ TEST(Backtracking, LoopTriangleDoesNotGetColoredAndReturnsFalse) {
     EXPECT_EQ(0, g.getEdge(10, 1).color)
             << "Current vertex: " << 10;
 }
+
+TEST(Cycle, FindingCycleInLoopGraphWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    const auto& cycle = g.findCycle();
+    EXPECT_EQ(11, cycle.size());
+
+    for(unsigned i = 0; i < 10; i++) {
+        EXPECT_EQ(i+1, cycle[i]);
+    }
+    EXPECT_EQ(1, cycle[10]);
+}
+
+TEST(Cycle, FindingCycleInTreeReturnsEmpty) {
+    auto g = generateSimpleTreeGraph();
+    const auto& cycle = g.findCycle();
+    EXPECT_EQ(0, cycle.size());
+}
+
+
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
