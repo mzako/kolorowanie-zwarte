@@ -51,7 +51,7 @@ Graph generateSimpleTreeGraph() {
     return Graph(a);
 }
 
-Graph generateASimpleForestGraph() {
+Graph generateSimpleForestGraph() {
     AdjList a;
 
     for(unsigned i = 1; i <= 10; i++) {
@@ -81,6 +81,46 @@ Graph generateASimpleForestGraph() {
 
 Graph generateEmptyGraph() {
     AdjList a;
+    return Graph(a);
+}
+
+
+Graph generateGraphWithOneLoopAndSomeHangingEges() {
+    AdjList a;
+
+    /* Loop 1-6
+       Hanging 7-11 coming out from vertex 3
+       Hanging 12-14 coming out from vertex 4
+    */
+
+    for(unsigned i = 1; i < 15; i++) {
+        a[i] = std::vector<Edge>();
+    }
+
+    for(unsigned i = 1; i < 6; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+    a[6].emplace_back(6, 1);
+    a[1].emplace_back(1, 6);
+
+
+    for(unsigned i = 7; i < 11; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    a[3].emplace_back(3, 7);
+    a[7].emplace_back(7, 3);
+
+    for(unsigned i = 12; i < 15; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    a[4].emplace_back(4, 12);
+    a[12].emplace_back(12, 4);
+
     return Graph(a);
 }
 
@@ -358,7 +398,7 @@ TEST(Forest, ColoringATreeWorks) {
 }
 
 TEST(Forest, ColoringAForestWorks) {
-    auto g = generateASimpleForestGraph();
+    auto g = generateSimpleForestGraph();
     g.colorAsForest();
     for(const auto& v : g.getAdj()) {
         for(const auto& e : v.second) {
@@ -413,6 +453,48 @@ TEST(Graph, MovingEdgeToAnotherGraphMakesItAppearInIt) {
     EXPECT_EQ(3, v2[0].v2);
     EXPECT_EQ(3, v3[0].v1);
     EXPECT_EQ(2, v3[0].v2);
+}
+
+TEST(Hanging, RecursivelyMovingHangingEdgesFromTreeToAnotherGraphMovesAllEdges) {
+    auto g = generateSimpleTreeGraph();
+    int sizeBefore = g.getAdj().size();
+    auto outG = generateEmptyGraph();
+    g.moveHangingEdgesTo(outG);
+    EXPECT_EQ(0, g.getAdj().size());
+    EXPECT_EQ(sizeBefore, outG.getAdj().size());
+}
+
+TEST(Hanging, RecursivelyMovingHangingEdgesFromForestToAnotherGraphMovesAllEdges) {
+    auto g = generateSimpleForestGraph();
+    int sizeBefore = g.getAdj().size();
+    auto outG = generateEmptyGraph();
+    g.moveHangingEdgesTo(outG);
+    EXPECT_EQ(0, g.getAdj().size());
+    EXPECT_EQ(sizeBefore, outG.getAdj().size());
+}
+
+TEST(Hanging, RecursivelyMovingHangingEdgesFromAGraphWithALoopDoesNotMoveTheLoop) {
+    auto g = generateGraphWithOneLoopAndSomeHangingEges();
+    // 15 vertices in graph, loop has 6 vertices
+    int sizeBefore = g.getAdj().size();
+    auto outG = generateEmptyGraph();
+    g.moveHangingEdgesTo(outG);
+
+    int numEdgesInOriginalGraph = 0;
+    for(const auto& v : g.getAdj()) {
+        for(const auto& e : v.second) {
+            numEdgesInOriginalGraph++;
+        } 
+    }
+    EXPECT_EQ(6, numEdgesInOriginalGraph/2); // each edge is counted twice
+
+    int numEdgesInOutputGraph = 0;
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            numEdgesInOutputGraph++;
+        } 
+    }
+    EXPECT_EQ(9, numEdgesInOutputGraph/2);
 }
 
 int main(int argc, char **argv) {

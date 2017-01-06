@@ -33,11 +33,13 @@ public:
     void colorAsForest();
     std::vector<int> legalColoringsOfEdge(const int v1, const int v2) const;
     void moveEdgeToAnotherGraph(Graph& other, const int v1, const int v2);
+    void moveHangingEdgesTo(Graph& outGraph);
 private:
     void deserialize(std::string fileName);
 
     std::vector<int> findCycleRecur(const int startingVertexIdx, 
         const int currentVertexIdx, const int prevIdx);
+    Edge* findHangingEdge();
 
     AdjList adj;
     VertexLabels labels;

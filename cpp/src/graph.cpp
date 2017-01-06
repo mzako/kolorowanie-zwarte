@@ -315,7 +315,7 @@ void Graph::colorAsForest() {
             numUncolored++;
         }
     }
-    numUncolored /= 2;
+    numUncolored /= 2; // each edge is counted twice
     std::cout << "COLORING A FOREST WITH " << numUncolored << " EDGES" << std::endl;
 
     while(numUncolored != 0) {
@@ -420,4 +420,24 @@ void Graph::moveEdgeToAnotherGraph(Graph& other, const int v1, const int v2) {
         i++;
     }
     other.addEdge(Edge(v1, v2, color));
+}
+
+void Graph::moveHangingEdgesTo(Graph& outGraph) {
+    while(true) {
+        Edge* e = findHangingEdge();
+        if(!e) {
+            break;
+        }
+        std::cout << "MOVING HANGING EDGE " << e->v1 << "," << e->v2 << std::endl;
+        moveEdgeToAnotherGraph(outGraph, e->v1, e->v2);
+    }
+}
+
+Edge* Graph::findHangingEdge() {
+    for(const auto& v : adj) {
+        if(v.second.size() == 1) {
+            return &getEdge(v.second[0].v1, v.second[0].v2);
+        }
+    }
+    return nullptr;
 }
