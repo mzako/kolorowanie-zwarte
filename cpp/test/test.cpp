@@ -346,9 +346,20 @@ TEST(Cycle, FindingCycleInTreeReturnsEmpty) {
     EXPECT_EQ(0, cycle.size());
 }
 
-TEST(Tree, ColoringATreeWorks) {
+TEST(Forest, ColoringATreeWorks) {
     auto g = generateSimpleTreeGraph();
-    g.colorAsTree();
+    g.colorAsForest();
+    for(const auto& v : g.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_FALSE(g.areGaps(v.first));
+    }
+}
+
+TEST(Forest, ColoringAForestWorks) {
+    auto g = generateASimpleForestGraph();
+    g.colorAsForest();
     for(const auto& v : g.getAdj()) {
         for(const auto& e : v.second) {
             EXPECT_NE(0, e.color);

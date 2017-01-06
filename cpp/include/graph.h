@@ -30,7 +30,7 @@ public:
     int getLowestColor(const int vertexIndex) const;
     int getHighestColor(const int vertexIndex) const;
     std::vector<int> findCycle();
-    void colorAsTree();
+    void colorAsForest();
     std::vector<int> legalColoringsOfEdge(const int v1, const int v2) const;
     void moveEdgeToAnotherGraph(Graph& other, const int v1, const int v2);
 private:

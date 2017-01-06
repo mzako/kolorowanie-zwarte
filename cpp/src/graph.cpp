@@ -308,7 +308,7 @@ std::vector<int> Graph::findCycleRecur(const int startingVertexIdx,
     return std::vector<int>{}; // return empty
 }
 
-void Graph::colorAsTree() {
+void Graph::colorAsForest() {
     int numUncolored = 0;
     for(auto& v : adj) {
         for(auto& e : v.second) {
@@ -316,34 +316,59 @@ void Graph::colorAsTree() {
         }
     }
     numUncolored /= 2;
-
-    std::cout << "COLORING TREE WITH " << numUncolored << " EDGES" << std::endl;
-
-    std::set<int> setK;
-    const auto& startingEdge = adj.begin()->second[0];
-
-    setK.insert(startingEdge.v1);
-    setK.insert(startingEdge.v2);
-    colorEdge(startingEdge.v1, startingEdge.v2, 1);
-    numUncolored -= 1;
-    std::cout << "NUM UNCOLORED: " << numUncolored << std::endl;
+    std::cout << "COLORING A FOREST WITH " << numUncolored << " EDGES" << std::endl;
 
     while(numUncolored != 0) {
+        int numColoredInThisTree = 0;
+        std::set<int> setK;
 
-        for(int v : setK) {
-            for(auto& edge : adj[v]) {
-                if(edge.color != 0) {
-                    continue;
+        int startV1, startV2, startColor;
+        bool uncoloredEdgeFound = false;
+        for(const auto& v : adj) {
+            for(const auto& edge : v.second) {
+                if(edge.color == 0) {
+                    startV1 = edge.v1;
+                    startV2 = edge.v2;
+                    startColor = edge.color;
+                    uncoloredEdgeFound = true;
+                    break;
                 }
-                std::vector<int> cols = legalColoringsOfEdge(edge.v1, edge.v2);
-                colorEdge(edge.v1, edge.v2, cols[0]);
-                setK.insert(edge.v1);
-                setK.insert(edge.v2);
-                numUncolored -= 1;
-                std::cout << "NUM UNCOLORED: " << numUncolored << std::endl;
+            }
+            if(uncoloredEdgeFound) {
+                break;
             }
         }
+
+        setK.insert(startV1);
+        setK.insert(startV2);
+        colorEdge(startV1, startV2, 1);
+        numUncolored -= 1;
+        std::cout << "NUM UNCOLORED: " << numUncolored << std::endl;
+
+        bool edgeWasColored = true;
+        while(edgeWasColored) {
+            edgeWasColored = false;
+
+            for(int v : setK) {
+                for(auto& edge : adj[v]) {
+                    if(edge.color != 0) {
+                        continue;
+                    }
+                    std::vector<int> cols = legalColoringsOfEdge(edge.v1, edge.v2);
+                    colorEdge(edge.v1, edge.v2, cols[0]);
+                    setK.insert(edge.v1);
+                    setK.insert(edge.v2);
+                    numUncolored -= 1;
+                    std::cout << "NUM UNCOLORED: " << numUncolored << std::endl;
+                    edgeWasColored = true;
+                    numColoredInThisTree++;
+                }
+            }
+        }
+        std::cout << "COLORED A TREE WITH " << numColoredInThisTree << 
+                     " EDGES" << std::endl;
     }
+
 }
 
 std::vector<int> Graph::legalColoringsOfEdge(const int v1, const int v2) const {
