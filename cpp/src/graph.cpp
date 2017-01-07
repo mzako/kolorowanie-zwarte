@@ -84,18 +84,18 @@ std::vector<Edge*> Graph::pathEdges(const std::vector<int>& elem) {
     std::vector<Edge*> edges;
     for(size_t i = 0; i < elem.size()-1; i++) {
         int currentVertex = elem[i], nextVertex = elem[i+1];
-        for(size_t j = 0; j < adj[currentVertex].size(); j++) {
-            if(adj[currentVertex][j].v2 == nextVertex) {
-                edges.emplace_back(&adj[currentVertex][j]);
+        for(size_t j = 0; j < adj.at(currentVertex).size(); j++) {
+            if(adj.at(currentVertex)[j].v2 == nextVertex) {
+                edges.emplace_back(&adj.at(currentVertex)[j]);
                 break;
             }
         }
     }
     // loop around
     int lastVertex = elem.back(), firstVertex = elem[0];
-    for(size_t j = 0; j < adj[lastVertex].size(); j++) {
-        if(adj[lastVertex][j].v2 == firstVertex) {
-            edges.emplace_back(&adj[lastVertex][j]);
+    for(size_t j = 0; j < adj.at(lastVertex).size(); j++) {
+        if(adj.at(lastVertex)[j].v2 == firstVertex) {
+            edges.emplace_back(&adj.at(lastVertex)[j]);
             break;
         }
     }
@@ -106,6 +106,7 @@ bool Graph::colorPath(std::vector<Edge*>::iterator edge, std::vector<Edge*>::ite
 
     // looped around?
     if(edge == end) {
+        std::cout << "BACKTRACK COLORING SUCCESSFUL" << std::endl;
         return true;
     }
 
@@ -146,10 +147,7 @@ std::vector<int> Graph::legalColoringsOf(const int vertexIndex) const {
 
     if(areGaps(vertexIndex)) {
         // there's a gap: find it and return it
-        std::vector<int> colors;
-        for(const auto& edge : adj.at(vertexIndex)) {
-            colors.emplace_back(edge.color);
-        }
+        std::vector<int> colors = getAllVertexConstraints(vertexIndex);
         std::sort(colors.begin(), colors.end());
         for(int i = 0; i < colors.size()-1; i++) {
             if(colors[i+1] - colors[i] != 1) {
@@ -207,8 +205,8 @@ bool Graph::areGaps(const int vertexIndex) const {
     const int lowestColor = getLowestColor(vertexIndex),
         highestColor = getHighestColor(vertexIndex);
     int sum = 0; 
-    for(const auto& edge : adj.at(vertexIndex)) {
-        sum += edge.color;
+    for(const int c : getAllVertexConstraints(vertexIndex)) {
+        sum += c;
     }
     const int expectedSum = (highestColor * (highestColor + 1) - 
         lowestColor * (lowestColor + 1) ) / 2;
@@ -217,15 +215,13 @@ bool Graph::areGaps(const int vertexIndex) const {
 
 int Graph::getLowestColor(const int vertexIndex) const {
     int lowestColor = -1;
-    for(const auto& edge : adj.at(vertexIndex)) {
-        if(edge.color > 0) {
-            if(lowestColor == -1) {
-                // first non-zero colour found
-                lowestColor = edge.color;
-            }
-            if(edge.color < lowestColor) {
-                lowestColor = edge.color;
-            }
+    for(const int c : getAllVertexConstraints(vertexIndex)) {
+        if(lowestColor == -1) {
+            // first non-zero colour found
+            lowestColor = c;
+        }
+        if(c < lowestColor) {
+            lowestColor = c;
         }
     }
     return lowestColor;
@@ -233,15 +229,13 @@ int Graph::getLowestColor(const int vertexIndex) const {
 
 int Graph::getHighestColor(const int vertexIndex) const {
     int highestColor = -1;
-    for(const auto& edge : adj.at(vertexIndex)) {
-        if(edge.color > 0) {
-            if(highestColor == -1) {
-                // first non-zero colour found
-                highestColor = edge.color;
-            }
-            if(edge.color > highestColor) {
-                highestColor = edge.color;
-            }
+    for(const int c : getAllVertexConstraints(vertexIndex)) {
+        if(highestColor == -1) {
+            // first non-zero colour found
+            highestColor = c;
+        }
+        if(c > highestColor) {
+            highestColor = c;
         }
     }
     return highestColor;
@@ -249,6 +243,7 @@ int Graph::getHighestColor(const int vertexIndex) const {
 
 std::vector<int> Graph::findCycle() {
     // cleanup labels
+    labels.clear();
     for(auto& keyval : adj) {
         labels[keyval.first] = false;
     }
@@ -323,27 +318,41 @@ void Graph::colorAsForest() {
         std::set<int> setK;
 
         int startV1, startV2, startColor;
-        bool uncoloredEdgeFound = false;
+
+        // first, look for an edge with a constraints
+        for(const auto& c : constraints) {
+            for(const auto& v : adj) {
+                if(c.first == v.first) {
+                    // constrained vertex found, find an uncolored edge
+                    for(const auto& edge : v.second) {
+                        if(edge.color == 0) {
+                            startV1 = edge.v1;
+                            startV2 = edge.v2;
+                            startColor = edge.color;
+                            goto done;
+                        }
+                    }
+                }
+            }
+        }
+
+        // else, look for some unconstrainted edge that is not colored
         for(const auto& v : adj) {
             for(const auto& edge : v.second) {
                 if(edge.color == 0) {
                     startV1 = edge.v1;
                     startV2 = edge.v2;
                     startColor = edge.color;
-                    uncoloredEdgeFound = true;
-                    break;
+                    goto done;
                 }
             }
-            if(uncoloredEdgeFound) {
-                break;
-            }
         }
+done:
 
         setK.insert(startV1);
         setK.insert(startV2);
-        colorEdge(startV1, startV2, 1);
+        colorEdge(startV1, startV2, legalColoringsOfEdge(startV1, startV2)[0]);
         numUncolored -= 1;
-        std::cout << "NUM UNCOLORED: " << numUncolored << std::endl;
 
         bool edgeWasColored = true;
         while(edgeWasColored) {
@@ -359,7 +368,6 @@ void Graph::colorAsForest() {
                     setK.insert(edge.v1);
                     setK.insert(edge.v2);
                     numUncolored -= 1;
-                    std::cout << "NUM UNCOLORED: " << numUncolored << std::endl;
                     edgeWasColored = true;
                     numColoredInThisTree++;
                 }
@@ -419,10 +427,24 @@ void Graph::moveEdgeToAnotherGraph(Graph& other, const int v1, const int v2) {
         }
         i++;
     }
-    other.addEdge(Edge(v1, v2, color));
+    if(!other.isEdge(v1, v2)) {
+        other.addEdge(Edge(v1, v2, color));
+    }
 }
 
-void Graph::moveHangingEdgesTo(Graph& outGraph) {
+void Graph::moveAllEdgesToAnotherGraph(Graph& other) {
+    for(auto& v : adj) {
+        for(auto& e : v.second) {
+            if(!other.isEdge(e.v1, e.v2)) {
+                other.addEdge(Edge(e.v1, e.v2, e.color));
+            }
+        }
+    }
+    adj.clear();
+}
+
+bool Graph::moveHangingEdgesTo(Graph& outGraph) {
+    bool movedSomething = false;
     while(true) {
         Edge* e = findHangingEdge();
         if(!e) {
@@ -430,7 +452,9 @@ void Graph::moveHangingEdgesTo(Graph& outGraph) {
         }
         std::cout << "MOVING HANGING EDGE " << e->v1 << "," << e->v2 << std::endl;
         moveEdgeToAnotherGraph(outGraph, e->v1, e->v2);
+        movedSomething = true;
     }
+    return movedSomething;
 }
 
 Edge* Graph::findHangingEdge() {
@@ -440,4 +464,142 @@ Edge* Graph::findHangingEdge() {
         }
     }
     return nullptr;
+}
+
+void Graph::color(Graph& outGraph) {
+    AdjList a;
+    auto tempGraph = Graph(a);
+
+    bool didSomething = true;
+    while(didSomething) {
+        std::cout << " ============= NEXT ITERATION" << std::endl;
+        printGraphs(tempGraph, outGraph);
+
+        didSomething = false;
+        const bool moved = moveHangingEdgesTo(tempGraph);
+        if(moved) {
+            std::cout << "SOME EDGES WERE MOVED TO TEMPGRAPH" << std::endl;
+            printGraphs(tempGraph, outGraph);
+        }
+        if(adj.size() == 0) {
+            // there are no cycles and tempGraph contains a forest. Color the forest.
+            std::cout << "NO CYCLES" << std::endl;
+            if(!tempGraph.getAdj().empty()) {
+                std::cout << "COLORING FOREST" << std::endl;
+                tempGraph.colorAsForest();
+                didSomething = true;
+                std::cout << "COLORED TEMPGRAPH AS FOREST" << std::endl;
+                printGraphs(tempGraph, outGraph);
+                tempGraph.moveAllEdgesToAnotherGraph(outGraph);
+            }
+        } else {
+            // there are cycles, find one
+            std::cout << "FINDING CYCLE" << std::endl;
+            const std::vector<int> verticesInCycle = findCycle();            
+            auto edgesInCycle = pathEdges(verticesInCycle);
+            // color it
+            const bool success = colorPath(edgesInCycle.begin(), edgesInCycle.end());
+            if(success) {
+
+                for(size_t i = 0; i < verticesInCycle.size()-1; i++) {
+                    const int v1 = verticesInCycle[i], v2 = verticesInCycle[i+1];
+                    const int color = getEdge(v1, v2).color;
+
+                    // export new constraints to temp graph
+                    tempGraph.addVertexConstraint(v1, color);
+                    tempGraph.addVertexConstraint(v2, color);
+                    addVertexConstraint(v1, color);
+                    addVertexConstraint(v2, color);
+
+                    // delete this cycle from graph
+                    moveEdgeToAnotherGraph(outGraph, v1, v2);
+
+                }
+                printGraphs(tempGraph, outGraph);
+                didSomething = true;
+            }
+        }
+    }
+}
+
+void Graph::print() const {
+    if(adj.empty() && constraints.empty()) {
+        std::cout << "~~EMPTY~~" << std::endl;
+    } else {
+        for(const auto& v : adj) {
+            std::cout << v.first << ": ";
+            for(const auto& e : v.second) {
+                std::cout << e.v2 << "(" << e.color << "), ";
+            }
+            if(constraints.find(v.first) != constraints.end()) {
+                std::cout << "constraints: [";
+                for(const int c : constraints.at(v.first)) {
+                    std::cout << c << ", ";
+                }
+                std::cout << "]";
+            }
+            std::cout << std::endl;
+        }
+    }
+}
+
+bool Graph::isOK(const int vertexIndex) {
+    if (areGaps(vertexIndex)) {
+        return false;
+    }
+    std::vector<int> seenColors;
+    for(const auto& e : adj.at(vertexIndex)) {
+        if(e.color == 0) {
+            return false;
+        }
+        for(const int seen : seenColors) {
+            if(seen == e.color) {
+                return false;
+            }
+        }
+        seenColors.emplace_back(e.color);
+    }
+    return true;
+}
+
+bool Graph::isEdge(const int v1, const int v2) {
+    if(adj.find(v1) == adj.end()) {
+        return false;
+    }
+    for(auto& edge : adj.at(v1)) {
+        if((edge.v1 == v1 && edge.v2 == v2) || (edge.v2 == v1 && edge.v1 == v2)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Graph::addVertexConstraint(const int vertexIndex, const int color) {
+    constraints[vertexIndex].insert(color);
+}
+
+std::vector<int> Graph::getAllVertexConstraints(const int vertexIndex) const {
+    std::vector<int> result;
+    if(constraints.find(vertexIndex) != constraints.end()) {
+        // there are artificial constraints
+        for(const int c : constraints.at(vertexIndex)) {
+            result.emplace_back(c);
+        }
+    }
+    // normal edges
+    for(const auto& e : adj.at(vertexIndex)) {
+        if(e.color != 0) {
+            result.emplace_back(e.color);
+        }
+    }
+    return result;
+}
+
+void Graph::printGraphs(const Graph& temp, const Graph& out) const {
+    std::cout << "  GRAPH: " << std::endl;
+    print();
+    std::cout << "  TEMPGRAPH: " << std::endl;
+    temp.print();
+    std::cout << "  OUTGRAPH: " << std::endl;
+    out.print();
 }

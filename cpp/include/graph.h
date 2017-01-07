@@ -4,11 +4,13 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
 #include "edge.h"
 
 using AdjList = std::map<int, std::vector<Edge>>;
 using VertexLabels = std::map<int, bool>;
+using VertexConstraints = std::map<int, std::set<int>>;
 
 class Graph {
 public:
@@ -33,15 +35,24 @@ public:
     void colorAsForest();
     std::vector<int> legalColoringsOfEdge(const int v1, const int v2) const;
     void moveEdgeToAnotherGraph(Graph& other, const int v1, const int v2);
-    void moveHangingEdgesTo(Graph& outGraph);
+    void moveAllEdgesToAnotherGraph(Graph& other);
+    bool moveHangingEdgesTo(Graph& outGraph);
+    void color(Graph& outGraph);
+    void print() const;
+    bool isOK(const int vertexIndex);
+    bool isEdge(const int v1, const int v2);
+    void addVertexConstraint(const int vertexIndex, const int color);
+    std::vector<int> getAllVertexConstraints(const int vertexIndex) const;
 private:
     void deserialize(std::string fileName);
 
     std::vector<int> findCycleRecur(const int startingVertexIdx, 
         const int currentVertexIdx, const int prevIdx);
     Edge* findHangingEdge();
+    void printGraphs(const Graph& temp, const Graph& out) const;
 
     AdjList adj;
     VertexLabels labels;
+    VertexConstraints constraints;
 };
 #endif //GRAPH_H

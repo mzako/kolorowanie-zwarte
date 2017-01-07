@@ -90,13 +90,14 @@ Graph generateGraphWithOneLoopAndSomeHangingEges() {
 
     /* Loop 1-6
        Hanging 7-11 coming out from vertex 3
-       Hanging 12-14 coming out from vertex 4
+       Hanging 12-15 coming out from vertex 4
     */
 
     for(unsigned i = 1; i < 15; i++) {
         a[i] = std::vector<Edge>();
     }
 
+    // loop
     for(unsigned i = 1; i < 6; i++) {
         a[i].emplace_back(i, i+1);
         a[i+1].emplace_back(i+1, i);
@@ -104,7 +105,7 @@ Graph generateGraphWithOneLoopAndSomeHangingEges() {
     a[6].emplace_back(6, 1);
     a[1].emplace_back(1, 6);
 
-
+    // hanging 1
     for(unsigned i = 7; i < 11; i++) {
         a[i].emplace_back(i, i+1);
         a[i+1].emplace_back(i+1, i);
@@ -113,6 +114,7 @@ Graph generateGraphWithOneLoopAndSomeHangingEges() {
     a[3].emplace_back(3, 7);
     a[7].emplace_back(7, 3);
 
+    // hanging 2
     for(unsigned i = 12; i < 15; i++) {
         a[i].emplace_back(i, i+1);
         a[i+1].emplace_back(i+1, i);
@@ -124,6 +126,121 @@ Graph generateGraphWithOneLoopAndSomeHangingEges() {
     return Graph(a);
 }
 
+Graph generateGraphTwoLoopsAndHangingEdges() {
+    AdjList a;
+
+    /* Loop 1-6
+       Hanging 7-11 coming out from vertex 3
+       Hanging 12-15 coming out from vertex 4
+       Loop 16-20
+       Connection 15-16 (bridge between loops)
+    */
+
+    for(unsigned i = 1; i < 20; i++) {
+        a[i] = std::vector<Edge>();
+    }
+
+    // loop 1
+    for(unsigned i = 1; i < 6; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+    a[6].emplace_back(6, 1);
+    a[1].emplace_back(1, 6);
+
+    // hanging 1
+    for(unsigned i = 7; i < 11; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    a[3].emplace_back(3, 7);
+    a[7].emplace_back(7, 3);
+
+    // hanging 2
+    for(unsigned i = 12; i < 15; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    a[4].emplace_back(4, 12);
+    a[12].emplace_back(12, 4);
+
+    // loop 2
+    for(unsigned i = 16; i < 19; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+    a[19].emplace_back(19, 16);
+    a[16].emplace_back(16, 19);
+
+    // connection (bridge) 
+    a[16].emplace_back(16, 15);
+    a[15].emplace_back(15, 16);
+
+    return Graph(a);
+}
+
+
+Graph generateGraphTwoLoopsHangingEdgesAndTwoConnections() {
+    AdjList a;
+
+    /* Loop 1-6
+       Hanging 7-11 coming out from vertex 3
+       Hanging 12-15 coming out from vertex 4
+       Loop 16-20
+       Connection 15-16 (bridge between loops)
+       Connection 18-2 (second bridge between loops)
+    */
+
+    for(unsigned i = 1; i < 20; i++) {
+        a[i] = std::vector<Edge>();
+    }
+
+    // loop 1
+    for(unsigned i = 1; i < 6; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+    a[6].emplace_back(6, 1);
+    a[1].emplace_back(1, 6);
+
+    // hanging 1
+    for(unsigned i = 7; i < 11; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    a[3].emplace_back(3, 7);
+    a[7].emplace_back(7, 3);
+
+    // hanging 2
+    for(unsigned i = 12; i < 15; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+
+    a[4].emplace_back(4, 12);
+    a[12].emplace_back(12, 4);
+
+    // loop 2
+    for(unsigned i = 16; i < 19; i++) {
+        a[i].emplace_back(i, i+1);
+        a[i+1].emplace_back(i+1, i);
+    }
+    a[19].emplace_back(19, 16);
+    a[16].emplace_back(16, 19);
+
+    // 1st connection (bridge) 
+    a[16].emplace_back(16, 15);
+    a[15].emplace_back(15, 16);
+
+    // 2nd connection (bridge) 
+    a[18].emplace_back(18, 2);
+    a[2].emplace_back(2, 18);
+
+    return Graph(a);
+}
 
 bool containersEqual(std::vector<int> a, std::vector<int> b) {
     std::sort(a.begin(), a.end());
@@ -191,6 +308,27 @@ TEST(Backtracking, DeterminingLegalColoringsOfAVertexWithLowestColor1Works) {
     EXPECT_TRUE(containersEqual(actual, expectedColors));
 }
 
+TEST(Backtracking, GettingAllConstraintsOfVertexReturnsItsEdgeColorsAndConstraints) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    g.addVertexConstraint(3, 10);
+    g.colorEdge(3, 4, 11);
+    const std::vector<int> expectedConstraints{10, 11};
+    const std::vector<int> actual = g.getAllVertexConstraints(3);
+    EXPECT_TRUE(containersEqual(actual, expectedConstraints));
+}
+
+TEST(Backtracking, DeterminingLegalColoringsOfVertexTakesConstraintsIntoAccount) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    g.addVertexConstraint(3, 10);
+    const std::vector<int> expectedColors{8, 9, 11, 12};
+    const std::vector<int> actual = g.legalColoringsOf(3);
+    for(const int a : actual ) {
+        std::cout << a << ", ";
+    }
+    std::cout << std::endl;
+    EXPECT_TRUE(containersEqual(actual, expectedColors));
+}
+
 TEST(Backtracking, DeterminingLegalColoringsOfEdgeWorks) {
     auto g = generateSimpleLoopGraphWith10Vertices();
     g.addEdge(Edge(1, 1000, 3));
@@ -251,7 +389,6 @@ TEST(Backtracking, ColoringAndGettingAnEdgeWorksBothWays) {
     EXPECT_EQ(7, g.getEdge(3, 4).color);
     EXPECT_EQ(7, g.getEdge(4, 3).color);
 }
-
 
 TEST(Backtracking, ModifyingAColorIsSeenInAPath) {
     auto g = generateSimpleLoopGraphWith10Vertices();
@@ -394,6 +531,24 @@ TEST(Forest, ColoringATreeWorks) {
             EXPECT_NE(0, e.color);
         }
         EXPECT_FALSE(g.areGaps(v.first));
+        EXPECT_TRUE(g.isOK(v.first));
+    }
+}
+
+TEST(Forest, ColoringATreeWithOneEdgeColorConstraintWorksWorks) {
+    auto g = generateSimpleTreeGraph();
+    g.addVertexConstraint(2, 20);
+    g.colorAsForest();
+    g.print();
+    for(const auto& v : g.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+            // probably they will all be greater than 10, since we constrain one
+            // edge to color 20.
+            EXPECT_LT(10, e.color); 
+        }
+        EXPECT_FALSE(g.areGaps(v.first));
+        EXPECT_TRUE(g.isOK(v.first));
     }
 }
 
@@ -405,10 +560,11 @@ TEST(Forest, ColoringAForestWorks) {
             EXPECT_NE(0, e.color);
         }
         EXPECT_FALSE(g.areGaps(v.first));
+        EXPECT_TRUE(g.isOK(v.first));        
     }
 }
 
-TEST(Graph, MovingEdgeToOutputRemovesItFromGraph) {
+TEST(Moving, MovingEdgeToOutputRemovesItFromGraph) {
     auto g = generateSimpleLoopGraphWith10Vertices();
     auto outG = generateEmptyGraph();
     int numEdgesBefore = 0;
@@ -429,7 +585,7 @@ TEST(Graph, MovingEdgeToOutputRemovesItFromGraph) {
     EXPECT_EQ(1, numEdgesBefore - numEdgesAfter);
 }
 
-TEST(Graph, MovingAllEdgesOfVertexRemovesVertex) {
+TEST(Moving, MovingAllEdgesOfVertexRemovesVertex) {
     auto g = generateSimpleLoopGraphWith10Vertices();
     auto outG = generateEmptyGraph();
     int numVerticesBefore = g.getAdj().size();
@@ -439,7 +595,7 @@ TEST(Graph, MovingAllEdgesOfVertexRemovesVertex) {
     EXPECT_EQ(1, numVerticesBefore - numVerticesAfter);
 }
 
-TEST(Graph, MovingEdgeToAnotherGraphMakesItAppearInIt) {
+TEST(Moving, MovingEdgeToAnotherGraphMakesItAppearInIt) {
     auto g = generateSimpleLoopGraphWith10Vertices();
     auto outG = generateEmptyGraph();
     EXPECT_EQ(0, outG.getAdj().size());
@@ -453,6 +609,33 @@ TEST(Graph, MovingEdgeToAnotherGraphMakesItAppearInIt) {
     EXPECT_EQ(3, v2[0].v2);
     EXPECT_EQ(3, v3[0].v1);
     EXPECT_EQ(2, v3[0].v2);
+}
+
+TEST(Moving, MovingMultipleTimesToAnotherGraphDoesNotRemoveStuffFromOtherGraph) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    auto outG = generateEmptyGraph();
+    g.moveEdgeToAnotherGraph(outG, 2, 3);
+    EXPECT_EQ(2, outG.getAdj().size());
+    g.moveEdgeToAnotherGraph(outG, 3, 4);
+    EXPECT_EQ(3, outG.getAdj().size());
+    g.moveEdgeToAnotherGraph(outG, 7, 8);
+    EXPECT_EQ(5, outG.getAdj().size());
+}
+
+TEST(Moving, MovingAllEdgesFromGraphToGraphWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    auto outG = generateEmptyGraph();
+    g.moveAllEdgesToAnotherGraph(outG);
+    EXPECT_EQ(0, g.getAdj().size());
+    EXPECT_EQ(10, outG.getAdj().size());
+}
+
+TEST(Moving, MovingEdgesFromEmptyGraphToSomeGraphDoesNotRemoveStuff) {
+    auto g = generateEmptyGraph();
+    auto outG = generateSimpleLoopGraphWith10Vertices();
+    g.moveAllEdgesToAnotherGraph(outG);
+    EXPECT_EQ(0, g.getAdj().size());
+    EXPECT_EQ(10, outG.getAdj().size());
 }
 
 TEST(Hanging, RecursivelyMovingHangingEdgesFromTreeToAnotherGraphMovesAllEdges) {
@@ -495,6 +678,116 @@ TEST(Hanging, RecursivelyMovingHangingEdgesFromAGraphWithALoopDoesNotMoveTheLoop
         } 
     }
     EXPECT_EQ(9, numEdgesInOutputGraph/2);
+}
+
+TEST(Hanging, MovingAHangingEdgeReturnsTrue) {
+    auto g = generateGraphWithOneLoopAndSomeHangingEges();
+    auto outG = generateEmptyGraph();
+    EXPECT_TRUE(g.moveHangingEdgesTo(outG));
+}
+
+TEST(Hanging, FailureToMoveAHangingEdgeReturnsFalse) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    auto outG = generateEmptyGraph();
+    EXPECT_FALSE(g.moveHangingEdgesTo(outG));
+}
+
+TEST(Coloring, ColoringATreeWorks) {
+    auto g = generateSimpleTreeGraph();
+    auto outG = generateEmptyGraph();
+    g.color(outG);
+    EXPECT_TRUE(!outG.getAdj().empty());
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+}
+
+TEST(Coloring, ColoringAForestWorks) {
+    auto g = generateSimpleForestGraph();
+    auto outG = generateEmptyGraph();
+    g.color(outG);
+    EXPECT_TRUE(!outG.getAdj().empty());
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+}
+
+TEST(Coloring, ColoringALoopWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    auto outG = generateEmptyGraph();
+    g.color(outG);
+    EXPECT_TRUE(!outG.getAdj().empty());
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+}
+
+TEST(Coloring, ColoringAGraphWithALoopAndHangingEdgesWorks) {
+    auto g = generateGraphWithOneLoopAndSomeHangingEges();
+    auto outG = generateEmptyGraph();
+    g.color(outG);
+    EXPECT_TRUE(!outG.getAdj().empty());
+    int i = 0;
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color)  << i++;
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+}
+
+TEST(Coloring, ColoringAGraphWithTwoLoopsAndHangingEdgesWorks) {
+    auto g = generateGraphTwoLoopsAndHangingEdges();
+    auto outG = generateEmptyGraph();
+    g.color(outG);
+    EXPECT_TRUE(!outG.getAdj().empty());
+    int i = 0;
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color)  << i++;
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+}
+
+TEST(Coloring, ColoringAGraphWithTwoLoopsHangingEdgesAndTwoConnections) {
+    auto g = generateGraphTwoLoopsHangingEdgesAndTwoConnections();
+    auto outG = generateEmptyGraph();
+    g.color(outG);
+    EXPECT_TRUE(!outG.getAdj().empty());
+    int i = 0;
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color)  << i++;
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+}
+
+TEST(Coloring, DeterminingIfVertexIsColoredOKWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    g.colorEdge(2, 3, 1);
+    g.colorEdge(3, 4, 2);
+    EXPECT_TRUE(g.isOK(3));
+    EXPECT_FALSE(g.isOK(4));
+    g.colorEdge(6, 7, 1);
+    g.colorEdge(7, 8, 3);
+    EXPECT_FALSE(g.isOK(7));
+}
+
+TEST(Coloring, DeterminingIfEdgeExistsWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    EXPECT_TRUE(g.isEdge(3, 4));
+    EXPECT_FALSE(g.isEdge(3, 5));
 }
 
 int main(int argc, char **argv) {
