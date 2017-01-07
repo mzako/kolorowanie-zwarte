@@ -23,8 +23,10 @@ if not is_complete:
         random_node = current_node_idx
         while random_node == current_node_idx:
             random_node = random.randint(0, num_nodes)
-        nodes[current_node_idx].append(random_node)
-        edge_idx += 1
+        if random_node not in nodes[current_node_idx]:
+            nodes[current_node_idx].append(random_node)
+            nodes[random_node].append(current_node_idx)
+            edge_idx += 1
 
     filename = "{}_{}_{}".format(num_nodes, num_edges, seed)
 

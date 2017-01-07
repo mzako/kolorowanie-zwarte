@@ -7,7 +7,10 @@ int main(int argc, char *argv[]) {
         cout<<"usage: "<< argv[0] <<" <input file> <output file>" << endl;
     else {
         Graph graph(argv[1]);
-        graph.serialize(argv[2]);
+        AdjList a;
+        auto outGraph = Graph(a);
+        graph.color(outGraph);
+        outGraph.serialize(argv[2]);
     }
 
     return 0;
