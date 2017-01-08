@@ -7,7 +7,7 @@
 #include <set>
 #include <deque>
 
-#define LOGLEVEL 3
+bool verbose = false;
 
 std::ostream& operator<< (std::ostream& os, const Graph& graph) {
     for (auto& kv : graph.getAdj()) {
@@ -47,8 +47,10 @@ void Graph::deserialize(std::string fileName) {
 }
 
 void Graph::serialize(std::string fileName) const {
-    std::ofstream file(fileName);
 
+    std::cout << "Saving dotfile graph to " << fileName << ".dot" << std::endl;
+
+    std::ofstream file(fileName + ".dot");
     if (file) {
         file << "graph {" << std::endl;
 
@@ -64,8 +66,9 @@ void Graph::serialize(std::string fileName) const {
         file << "}" << std::endl;
     }
 
-    std::ofstream filetxt(fileName + ".txt");
+    std::cout << "Saving raw text graph to " << fileName << ".txt" << std::endl;
 
+    std::ofstream filetxt(fileName + ".txt");
     if(filetxt) {
         for (auto& kv : adj) {
             filetxt << kv.first << ": ";
@@ -103,7 +106,7 @@ std::vector<Edge*> Graph::pathEdges(const std::vector<int>& elem) {
 
 bool Graph::colorPath(std::vector<Edge*> edges) {
 
-    std::cout << " === COLORING PATH" << std::endl;
+    std::cout << " === Coloring path" << std::endl;
 
     int startingIndex = 0;
     for(size_t i = 0; i < edges.size(); i++) {
@@ -111,8 +114,8 @@ bool Graph::colorPath(std::vector<Edge*> edges) {
         auto legals = legalColoringsOf(edges[i]->v1);
         if(!legals.empty()) {
             startingIndex = i;
-            std::cout << "FOUND A CONSTRAINT AT ELEMENT " << startingIndex << 
-                        " OF PATH" << std::endl;
+            std::cout << "Found a constraint at element " << startingIndex << 
+                        " of path" << std::endl;
             break;
         }
     }
@@ -123,13 +126,14 @@ bool Graph::colorPath(std::vector<Edge*> edges) {
     for(int i = 0; i < numEdges; i++) {
         offsetEdges.emplace_back(edges[(i+startingIndex) % numEdges]);
     }
-    //offsetEdges.emplace_back(edges.front());
 
-    std::cout << "APPLIED OFFSET: ";
-    for(const auto e : offsetEdges) {
-        std::cout << e->v1 << ", ";
+    if(verbose) {
+        std::cout << "Applied offset: ";
+        for(const auto e : offsetEdges) {
+            std::cout << e->v1 << ", ";
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
 
     return colorPathRecur(offsetEdges.begin(), offsetEdges.end());
 }
@@ -139,7 +143,7 @@ bool Graph::colorPathRecur(std::vector<Edge*>::iterator edge,
 
     // looped around?
     if(edge == end) {
-        std::cout << "BACKTRACK COLORING REACHED END" << std::endl;
+        if(verbose) std::cout << "Backtrack coloring reached end" << std::endl;
         return true;
     }
 
@@ -148,43 +152,17 @@ bool Graph::colorPathRecur(std::vector<Edge*>::iterator edge,
     const std::vector<int> legalsOfEdge = legalColoringsOfEdge(currentVertexIdx, 
         nextVertexIdx);
 
-    // int lowestLegal, highestLegal;
-    // if(!legalsOfEdge.empty()) {
-    //     auto legalsSorted = legalsOfEdge;
-    //     std::sort(legalsSorted.begin(), legalsSorted.end());
-    //     if(legalsSorted.size() == 4) {
-    //         lowestLegal = legalsSorted.front();
-    //     }
-    //     if(legalsSorted.size() > 3) {
-    //         highestLegal = legalsSorted.back();
-    //     }
-    // }
-
-    // std::cout << "Possible colorings of " << currentVertexIdx << " " << nextVertexIdx
-    //             << std::endl;
-    // for(const int c : legalsOfEdge) {
-    //     std::cout << c << ",";
-    // }
-    // std::cout << std::endl; 
     for(const int currentColor : legalsOfEdge) {
 
-
-        // don't do the 'gap' skip if we're on the last element
-        // if(((edge+1) == end || (edge+2) == end) && 
-        //     (currentColor == lowestLegal || currentColor == highestLegal)) {
-        //     std::cout << "WON'T TRY GAP SKIP BECAUSE WE'RE THE LAST ELEMENT" << std::endl;
-        //     continue;
-        // }
-
-        std::cout << "TRYING COL: " << currentColor << std::endl;
+        if(verbose) std::cout << "Trying color: " << currentColor << std::endl;
         colorEdge(currentVertexIdx, nextVertexIdx, currentColor);
         if(colorPathRecur(++edge, end)) {
             // see if our colors are fine
             if(!areGaps(currentVertexIdx)) {
                 return true;
             } else {
-                std::cout << "COLOR GAPS FOUND AT VERTEX " << currentVertexIdx << 
-                    " ZEROING PATH AHEAD." << std::endl;
+                if(verbose) std::cout << "Color gaps found at index " << currentVertexIdx << 
+                    " - zeroing path ahead." << std::endl;
                 // zero path ahead of us
                 --edge;
                 zeroPath(++edge, end);
@@ -192,7 +170,7 @@ bool Graph::colorPathRecur(std::vector<Edge*>::iterator edge,
         }
         --edge;
     }
-    std::cout << "FAILED VERTEX " << currentVertexIdx << std::endl;
+    if(verbose) std::cout << "Failed to color vertex " << currentVertexIdx << std::endl;
     colorEdge(currentVertexIdx, nextVertexIdx, 0);
     return false;
 }
@@ -243,7 +221,7 @@ std::vector<int> Graph::legalColoringsOf(const int vertexIndex) const {
 }
 
 void Graph::colorEdge(const int v1, const int v2, const int color) {
-    std::cout << "COLORING EDGE " << v1 << " " << v2 << " WITH " << color << std::endl;
+    if(verbose) std::cout << "Coloring edge " << v1 << ", " << v2 << " with color " << color << std::endl;
     for(auto& edge : adj.at(v1)) {
         if((edge.v1 == v1 && edge.v2 == v2) || (edge.v2 == v1 && edge.v1 == v2)) {
             edge.color = color;
@@ -319,13 +297,13 @@ std::vector<int> Graph::findCycle() {
         std::reverse(result.begin(), result.end());
         result.emplace_back(startingVertexIdx);
 
-        std::cout << "CYCLE FOUND: ";
+        std::cout << "Cycle found: ";
         for(const auto& el : result) {
             std::cout << el << ", ";
         }
         std::cout << std::endl;
     } else {
-        std::cout << "NO CYCLE FOUND" << std::endl;
+        std::cout << "No cycle found" << std::endl;
     }
 
     // cleanup labels
@@ -368,7 +346,7 @@ std::vector<int> Graph::findCycleRecur(const int startingVertexIdx,
 
 bool Graph::colorAsForest() {
     int numUncolored = numEdges();
-    std::cout << " === COLORING A FOREST WITH " << numUncolored << " EDGES" << std::endl;
+    std::cout << " === Coloring forest with " << numUncolored << " edges" << std::endl;
 
     AdjList a;
     auto tempGraph = Graph(a);
@@ -381,28 +359,28 @@ bool Graph::colorAsForest() {
     int numTries = 0;
     const int maxNumTries = 10;
     while(numUncolored != 0) {
-        std::cout << " = NEXT FOREST COLORING ITERATION" << std::endl;
-        if(LOGLEVEL > 2) {
-            std::cout << "TEMP FOREST GRAPH: " << std::endl;
+        std::cout << " = Next iteration of forest coloring" << std::endl;
+        if(verbose) {
+            std::cout << "Working forest graph: " << std::endl;
             tempGraph.print();
         }
 
         if(numTries > maxNumTries) {
-            std::cout << "TRIED TO COLOR THE FOREST " << numTries << " TIMES, FAILED."
+            std::cout << "Tried to color the forest " << numTries << " times, failed. Bailing out."
                       << std::endl;
             break;
         }
         numTries++; 
-        std::cout << "FINDING PATH IN FOREST" << std::endl;
+        std::cout << "Finding a path in forest" << std::endl;
 
         const std::vector<int> verticesInPath = tempGraph.findPath();
         if(verticesInPath.empty()) {
-            std::cout << "TREE APPEARS TO BE EMPTY" << std::endl;
+            std::cout << "Tree appears to be empty" << std::endl;
             if(graphQueue.empty()) {
-                std::cout << "QUEUE IS ALSO EMPTY, DONE" << std::endl;
+                std::cout << "Queue is also empty, done" << std::endl;
                 break;
             } else {
-                std::cout << "MOVING FROM QUEUE" << std::endl;
+                std::cout << "Moving edges from queue" << std::endl;
                 graphQueue.front()->moveAllEdgesToAnotherGraph(tempGraph);
                 graphQueue.pop_front();
                 continue;
@@ -411,10 +389,9 @@ bool Graph::colorAsForest() {
 
         auto edges = tempGraph.pathEdges(verticesInPath);
         const bool success = tempGraph.colorPath(edges);
-        
 
         if(success) {
-            std::cout << "COLORING WAS SUCCESSFUL" << std::endl;
+            std::cout << "Coloring was successful" << std::endl;
             
             for(size_t i = 0; i < verticesInPath.size()-1; i++) {
                 const int v1 = verticesInPath[i], v2 = verticesInPath[i+1];
@@ -429,7 +406,7 @@ bool Graph::colorAsForest() {
                 tempGraph.moveEdgeToAnotherGraph(outGraph, v1, v2);
             }
         } else {
-            std::cout << "FAILED TO COLOR, WILL MOVE TO QUEUE" << std::endl;
+            std::cout << "Failed to color, moving to queue" << std::endl;
             AdjList aa;
             Graph* newGraph = new Graph(aa);
             for(size_t i = 0; i < verticesInPath.size()-1; i++) {
@@ -541,7 +518,7 @@ bool Graph::moveHangingEdgesTo(Graph& outGraph) {
         if(!e) {
             break;
         }
-        std::cout << "MOVING HANGING EDGE " << e->v1 << "," << e->v2 << std::endl;
+        std::cout << "Moving hanging edge " << e->v1 << ", " << e->v2 << std::endl;
         moveEdgeToAnotherGraph(outGraph, e->v1, e->v2);
         movedSomething = true;
     }
@@ -575,17 +552,18 @@ bool Graph::color(Graph& outGraph) {
             triesDidNothing = 0;
         }
         if(triesDidNothing >= triesThreshold) {
-            std::cout << "TRIED " << triesDidNothing << " TIMES BUT DID NOTHING" << std::endl;
+            std::cout << "Tried " << triesDidNothing << " times but did nothing" << std::endl;
             break;
         }
 
-        std::cout << " ============= NEXT ITERATION" << std::endl;
+        std::cout << " ============= Next iteration" << std::endl;
 
         if(!graphQueue.empty()) {
             if(justAddedToQueue) {
-                std::cout << "QUEUE NOT EMPTY BUT JUST ADDED SOMETHING" << std::endl;
+                std::cout << "Wanted to add from queue, but something was just added to it. "
+                             "Skipping." << std::endl;
             } else {
-                std::cout << "ADDING FROM QUEUE" << std::endl;
+                std::cout << "Adding from queue" << std::endl;
                 Graph* popped = graphQueue.front();
                 popped->moveAllEdgesToAnotherGraph(*this);
                 graphQueue.pop_front();
@@ -598,48 +576,28 @@ bool Graph::color(Graph& outGraph) {
         didSomething = false;
         const bool moved = moveHangingEdgesTo(tempGraph);
         if(moved) {
-            std::cout << "SOME EDGES WERE MOVED TO TEMPGRAPH" << std::endl;
+            std::cout << "Some edges were moved to temporary graph" << std::endl;
             printGraphs(tempGraph, outGraph);
         }
         if(adj.empty()) {
             // there are no cycles and tempGraph contains a forest.
-            std::cout << "NO CYCLES" << std::endl;
+            std::cout << "No cycles found" << std::endl;
 
 
             if(!tempGraph.getAdj().empty()) {
-                // std::cout << "COLORING FOREST" << std::endl;
-                // std::vector<int> verticesInPath = tempGraph.findPath();
-
-                // std::cout << "DUPA1" << std::endl;
-
-                // AdjList a;
-                // //auto* newGraph = new Graph(a);
-                // std::cout << "DUPA2" << std::endl;
-                
-                // for(size_t i = 0; i < verticesInPath.size()-1; i++) {
-                // std::cout << "DUPA4" << std::endl;
-                    
-                //     const int v1 = verticesInPath[i], v2 = verticesInPath[i+1];
-                // std::cout << "DUPA5" << std::endl;
-                    
-                //     tempGraph.moveEdgeToAnotherGraph(*this, v1, v2);
-                // }
-                // std::cout << "DUPA3" << std::endl;
-                
-                //graphQueue.push_back(newGraph);
-                //justAddedToQueue = true;
-                //didSomething = true;
+                std::cout << "Coloring forest in tempgraph" << std::endl;
 
                 const bool success = tempGraph.colorAsForest();
                 if(!success) {
+                    std::cout << "Failed to color tempgraph as forest" << std::endl;
                     didSomething = false;
                 } else {
-                    didSomething = true;
-                    std::cout << "COLORED TEMPGRAPH AS FOREST" << std::endl;
+                    std::cout << "Colored tempgraph as forest" << std::endl;
                     printGraphs(tempGraph, outGraph);
+                    didSomething = true;
                 }
 
-                // // move all new constraints to graph and everything in the queue
+                // move all new constraints to graph and everything in the queue
                 for(const auto& v : tempGraph.getAdj()) {
                     for(const auto& e : v.second) {
                         addVertexConstraint(v.first, e.color);
@@ -653,18 +611,20 @@ bool Graph::color(Graph& outGraph) {
             }
         } else {
             // there are cycles, find one
-            std::cout << "FINDING CYCLE" << std::endl;
+            std::cout << "Finding cycle" << std::endl;
             const std::vector<int> verticesInCycle = findCycle();
 
             const std::vector<int> constraintsInCycle = 
                 findConstrainedVerticesInCycle(verticesInCycle);
 
-            std::cout << "FOUND A CYCLE WITH " << constraintsInCycle.size()
-                        << " CONSTRAINTS: ";
-            for(const auto c : constraintsInCycle) {
-                std::cout << c << ", ";
+            if(verbose) {
+                std::cout << "Found a cycle with " << constraintsInCycle.size()
+                            << " constraints: ";
+                for(const auto c : constraintsInCycle) {
+                    std::cout << c << ", ";
+                }
+                std::cout << std::endl;
             }
-            std::cout << std::endl;
 
             if(constraintsInCycle.size() <= 1) {
                 // there's at most one constraint in the cycle
@@ -673,7 +633,7 @@ bool Graph::color(Graph& outGraph) {
                 // color it
                 const bool success = colorPath(edgesInCycle);
                 if(success) {
-                    std::cout << "COLORING PATH SUCCESSFUL" << std::endl;
+                    std::cout << "Coloring path successful" << std::endl;
 
                     for(size_t i = 0; i < verticesInCycle.size()-1; i++) {
                         const int v1 = verticesInCycle[i], v2 = verticesInCycle[i+1];
@@ -696,7 +656,7 @@ bool Graph::color(Graph& outGraph) {
                     didSomething = true;
                 } else {
                     // failed to color it, move it to queue
-                    std::cout << "FAILED TO COLOR, MOVING TO QUEUE" << std::endl;
+                    std::cout << "Failed to color, moving to queue" << std::endl;
                     AdjList a;
                     auto* newGraph = new Graph(a);
                     for(size_t i = 0; i < verticesInCycle.size()-1; i++) {
@@ -712,7 +672,7 @@ bool Graph::color(Graph& outGraph) {
 
                 const auto paths = splitCycle(verticesInCycle, constraintsInCycle);
             
-                std::cout << "SPLIT CYCLE INTO " << paths.size() << " PATHS" << std::endl;
+                std::cout << "Split cycle into " << paths.size() << " paths" << std::endl;
 
                 AdjList a;
                 std::vector<Graph> pathGraphs(paths.size(), Graph(a));
@@ -734,17 +694,19 @@ bool Graph::color(Graph& outGraph) {
 
                     const auto currentPath = paths[i];
 
-                    std::cout << "CURRENT PATH: " << i << ": ";
-                    for(const int v : currentPath) {
-                        std::cout << v << ", ";
+                    if(verbose) {
+                        std::cout << "Current path: " << i << " - ";
+                        for(const int v : currentPath) {
+                            std::cout << v << ", ";
+                        }
+                        std::cout << std::endl;
                     }
-                    std::cout << std::endl;
 
                     auto edges = pathGraphs[i].pathEdges(paths[i]);
                     const bool success = pathGraphs[i].colorPath(edges);
 
                     if(success) {
-                        std::cout << "COLORING PATH SUCCESSFUL" << std::endl;
+                        std::cout << "Coloring path successful" << std::endl;
                         // export new constraints to tempgraph, original graph and
                         // to all next path graphs
                         for(size_t j = 0; j < currentPath.size()-1; j++) {
@@ -758,13 +720,11 @@ bool Graph::color(Graph& outGraph) {
                                 pathGraphs[w].addVertexConstraint(v1, color);
                                 pathGraphs[w].addVertexConstraint(v2, color);
                             }
-                            // delete this edge from graph
-                            std::cout << "PATHGRAPH: " << std::endl;
-                            pathGraphs[i].print();
+                            // delete this path from graph
                             pathGraphs[i].moveEdgeToAnotherGraph(outGraph, v1, v2);
                         }
                     } else {
-                        std::cout << "FAILED TO COLOR, MOVING TO QUEUE" << std::endl;
+                        std::cout << "Failed to color, moving to queue" << std::endl;
                         AdjList a;
                         auto* newGraph = new Graph(a);
                         for(size_t j = 0; j < currentPath.size()-1; j++) {
@@ -798,7 +758,7 @@ bool Graph::color(Graph& outGraph) {
 }
 
 void Graph::print() const {
-    if(LOGLEVEL < 3) {
+    if(!verbose) {
         return;
     }
 
@@ -875,12 +835,14 @@ std::vector<int> Graph::getAllVertexConstraints(const int vertexIndex) const {
 }
 
 void Graph::printGraphs(const Graph& temp, const Graph& out) const {
-    std::cout << "  GRAPH: " << std::endl;
-    print();
-    std::cout << "  TEMPGRAPH: " << std::endl;
-    temp.print();
-    std::cout << "  OUTGRAPH: " << std::endl;
-    out.print();
+    if(verbose) {
+        std::cout << "  Graph: " << std::endl;
+        print();
+        std::cout << "  Tempgraph: " << std::endl;
+        temp.print();
+        std::cout << "  Outgraph: " << std::endl;
+        out.print();
+    }
 }
 
 std::vector<int> Graph::findConstrainedVerticesInCycle(std::vector<int> indices) const {
@@ -966,7 +928,7 @@ std::vector<int> Graph::findPath() {
         std::reverse(result.begin(), result.end());
     }
 
-    std::cout<< "FOUND PATH: ";
+    std::cout<< "Found path: ";
     for(const int a : result) {
         std::cout << a << ", ";
     }

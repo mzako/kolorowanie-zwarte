@@ -12,6 +12,8 @@ using AdjList = std::map<int, std::vector<Edge>>;
 using VertexLabels = std::map<int, bool>;
 using VertexConstraints = std::map<int, std::set<int>>;
 
+extern bool verbose;
+
 class Graph {
 public:
     Graph(std::string fileName);
