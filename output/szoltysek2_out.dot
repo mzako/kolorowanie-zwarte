@@ -1,0 +1,11 @@
+graph {
+    1 -- 7 [label=10]
+    1 -- 10 [label=9]
+    2 -- 9 [label=10]
+    3 -- 7 [label=8]
+    3 -- 8 [label=7]
+    4 -- 7 [label=9]
+    4 -- 10 [label=8]
+    5 -- 9 [label=9]
+    6 -- 10 [label=7]
+}

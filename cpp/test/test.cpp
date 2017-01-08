@@ -133,7 +133,6 @@ Graph generateGraphTwoLoopsAndHangingEdges() {
        Hanging 7-11 coming out from vertex 3
        Hanging 12-15 coming out from vertex 4
        Loop 16-20
-       Connection 15-16 (bridge between loops)
     */
 
     for(unsigned i = 1; i < 20; i++) {
@@ -173,10 +172,6 @@ Graph generateGraphTwoLoopsAndHangingEdges() {
     }
     a[19].emplace_back(19, 16);
     a[16].emplace_back(16, 19);
-
-    // connection (bridge) 
-    a[16].emplace_back(16, 15);
-    a[15].emplace_back(15, 16);
 
     return Graph(a);
 }

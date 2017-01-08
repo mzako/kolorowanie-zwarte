@@ -1,8 +1,18 @@
 ### Cpp project files
 
-To build project run in this directory:
-make 
+You need to install google test to build and run tests.
 
+To build, run the following in this directory:
+```
+cmake .
+make 
+```
 To run:
-cd bin
-./gcolor <input file> <output file>  
+```
+bin/gcolor <input file> <output file> [--dontcolor] [--verbose]
+```
+
+To run tests
+```
+bin/runTests
+```
