@@ -68,6 +68,18 @@ void Graph::serialize(std::string fileName) const {
 
         file << "}" << std::endl;
     }
+
+    std::ofstream filetxt(fileName + ".txt");
+
+    if(filetxt) {
+        for (auto& kv : adj) {
+            filetxt << kv.first << ": ";
+            for (auto& edge : kv.second) {
+                filetxt << edge.v2 << "(" << edge.color << "), "; 
+            }
+            filetxt << std::endl;
+        }
+    }
 }
 
 const std::map<int, std::vector<Edge>>& Graph::getAdj() const {
