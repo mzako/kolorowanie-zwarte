@@ -9,7 +9,14 @@ int main(int argc, char *argv[]) {
         Graph graph(argv[1]);
         AdjList a;
         auto outGraph = Graph(a);
-        graph.color(outGraph);
+        const bool success = graph.color(outGraph);
+        if(!success) {
+            std::cout << std::endl << " ~~~~~~ FAILED TO COLOR GRAPH :( ~~~~~~ " 
+                      << std::endl;
+        } else {
+            std::cout << std::endl << " ~~~~~~ SUCCESS :) ~~~~~~ " << std::endl;
+        }
+        outGraph.print();
         outGraph.serialize(argv[2]);
     }
 

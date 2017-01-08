@@ -181,7 +181,6 @@ Graph generateGraphTwoLoopsAndHangingEdges() {
     return Graph(a);
 }
 
-
 Graph generateGraphTwoLoopsHangingEdgesAndTwoConnections() {
     AdjList a;
 
@@ -241,6 +240,53 @@ Graph generateGraphTwoLoopsHangingEdgesAndTwoConnections() {
 
     return Graph(a);
 }
+
+Graph generateGraphK4() {
+    AdjList a;
+
+    for(unsigned i = 1; i <= 4; i++) {
+        a[i] = std::vector<Edge>();
+    }
+
+    a[1].emplace_back(1, 2);
+    a[1].emplace_back(1, 3);
+    a[1].emplace_back(1, 4);
+
+    a[2].emplace_back(2, 1);
+    a[2].emplace_back(2, 3);
+    a[2].emplace_back(2, 4);
+
+    a[3].emplace_back(3, 1);
+    a[3].emplace_back(3, 2);
+    a[3].emplace_back(3, 4);
+
+    a[4].emplace_back(4, 1);
+    a[4].emplace_back(4, 2);
+    a[4].emplace_back(4, 3);
+
+    return Graph(a);
+}
+
+Graph generateTriangleGraph() {
+    AdjList a;
+
+    for(unsigned i = 1; i <= 3; i++) {
+        a[i] = std::vector<Edge>();
+    }
+
+    a[1].emplace_back(1, 2);
+    a[2].emplace_back(2, 1);
+
+    a[3].emplace_back(3, 2);
+    a[2].emplace_back(2, 3);
+
+    a[3].emplace_back(3, 1);
+    a[1].emplace_back(1, 3);
+
+    return Graph(a);
+}
+
+
 
 bool containersEqual(std::vector<int> a, std::vector<int> b) {
     std::sort(a.begin(), a.end());
@@ -407,34 +453,33 @@ TEST(Backtracking, ZeroingColorsAlongPathWorks) {
     EXPECT_EQ(0, g.getEdge(3, 4).color);
 }
 
-TEST(Backtracking, LoopWithNoConstraintsColorsAlternate121212Etc) {
+TEST(Backtracking, LoopWithNoConstraintsWorks) {
     auto g = generateSimpleLoopGraphWith10Vertices();
 
     const std::vector<int> indicesInPath{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1};
     auto edges = g.pathEdges(indicesInPath);
 
-    const int maxColor = 10, startingIdx = indicesInPath[0];
-    const bool success = g.colorPath(edges.begin(), edges.end());
+    const bool success = g.colorPath(edges);
     EXPECT_TRUE(success);
 
-    const std::vector<int> expectedColors{1, 2, 1, 2, 1, 2, 1, 2, 1, 2};
-    for(unsigned i = 1; i <= 9; i++) {
-        EXPECT_EQ(expectedColors[i-1], g.getEdge(i, i+1).color)
-            << "Current vertex: " << i;
+    for(const auto& v : g.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_FALSE(g.areGaps(v.first));
+        EXPECT_TRUE(g.isOK(v.first));
     }
-    EXPECT_EQ(expectedColors.back(), g.getEdge(10, 1).color)
-            << "Current vertex: " << 10;
 }
 
-TEST(Backtracking, LoopWithContraint67Works) {
+TEST(Backtracking, LoopWithContraint36Works) {
     auto g = generateSimpleLoopGraphWith10Vertices();
 
     // add a constraint for vertices 3 and 6 - they both have an edge of color 1.
     /*             _____________
-          1    2  | 3    2      |
+          2    3  | 2    1      |
         1 -- 2 -- 3 -- 4 -- 5   |1
-       2|                   |1  |
-        | 1   2     3    2  |   |
+       1|                   |2  |
+        | 2   1     2    3  |   |
         10-- 9 -- 8 -- 7 -- 6 --|
     */
     const int constraintColor = 1;
@@ -443,12 +488,10 @@ TEST(Backtracking, LoopWithContraint67Works) {
     const std::vector<int> indicesInPath{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1};
     auto edges = g.pathEdges(indicesInPath);
 
-    const int maxColor = 10, startingIdx = indicesInPath[0];
-    const bool success = g.colorPath(edges.begin(), edges.end());
+    const bool success = g.colorPath(edges);
     EXPECT_TRUE(success);
-    // EXPECT_FALSE(success);
 
-    const std::vector<int> expectedColors{1, 2, 3, 2, 1, 2, 3, 2, 1, 2};
+    const std::vector<int> expectedColors{2, 3, 2, 1, 2, 3, 2, 1, 2, 1};
     for(unsigned i = 1; i <= 9; i++) {
         EXPECT_EQ(expectedColors[i-1], g.getEdge(i, i+1).color)
             << "Current vertex: " << i;
@@ -462,12 +505,12 @@ TEST(Backtracking, LoopWithContraint38Works) {
 
     // add a constraint for vertices 3 and 8 - they both have an edge of color 1.
     /* Possible coloring:
-          1    2    3    2
+          2    3    2    1
         1 -- 2 -- 3 -- 4 -- 5
-      2 |        1|         | 1
+      1 |        1|         | 2
         |         |         |
         10-- 9 -- 8 -- 7 -- 6
-          1    2    3    2
+          2    3    2    1
     */
     const int constraintColor = 1;
     g.addEdge(Edge(3, 8, constraintColor));
@@ -475,11 +518,10 @@ TEST(Backtracking, LoopWithContraint38Works) {
     const std::vector<int> indicesInPath{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1};
     auto edges = g.pathEdges(indicesInPath);
 
-    const int maxColor = 10, startingIdx = indicesInPath[0];
-    const bool success = g.colorPath(edges.begin(), edges.end());
+    const bool success = g.colorPath(edges);
     EXPECT_TRUE(success);
 
-    const std::vector<int> expectedColors{1, 2, 3, 2, 1, 2, 3, 2, 1, 2};
+    const std::vector<int> expectedColors{2, 3, 2, 1, 2, 1, 2, 3, 2, 1};
     for(unsigned i = 1; i <= 9; i++) {
         EXPECT_EQ(expectedColors[i-1], g.getEdge(i, i+1).color)
             << "Current vertex: " << i;
@@ -494,8 +536,7 @@ TEST(Backtracking, LoopTriangleDoesNotGetColoredAndReturnsFalse) {
     const std::vector<int> indicesInPath{1, 2, 3, 1};
     auto edges = g.pathEdges(indicesInPath);
 
-    const int maxColor = 10, startingIdx = indicesInPath[0];
-    const bool success = g.colorPath(edges.begin(), edges.end());
+    const bool success = g.colorPath(edges);
     EXPECT_FALSE(success);
 
     for(unsigned i = 1; i <= 9; i++) {
@@ -694,8 +735,9 @@ TEST(Hanging, FailureToMoveAHangingEdgeReturnsFalse) {
 
 TEST(Coloring, ColoringATreeWorks) {
     auto g = generateSimpleTreeGraph();
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
     auto outG = generateEmptyGraph();
-    g.color(outG);
+    EXPECT_TRUE(g.color(outG));
     EXPECT_TRUE(!outG.getAdj().empty());
     for(const auto& v : outG.getAdj()) {
         for(const auto& e : v.second) {
@@ -703,12 +745,15 @@ TEST(Coloring, ColoringATreeWorks) {
         }
         EXPECT_TRUE(outG.isOK(v.first));
     }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
 }
 
 TEST(Coloring, ColoringAForestWorks) {
     auto g = generateSimpleForestGraph();
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
     auto outG = generateEmptyGraph();
-    g.color(outG);
+    EXPECT_TRUE(g.color(outG));
     EXPECT_TRUE(!outG.getAdj().empty());
     for(const auto& v : outG.getAdj()) {
         for(const auto& e : v.second) {
@@ -716,12 +761,15 @@ TEST(Coloring, ColoringAForestWorks) {
         }
         EXPECT_TRUE(outG.isOK(v.first));
     }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
 }
 
 TEST(Coloring, ColoringALoopWorks) {
     auto g = generateSimpleLoopGraphWith10Vertices();
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
     auto outG = generateEmptyGraph();
-    g.color(outG);
+    EXPECT_TRUE(g.color(outG));
     EXPECT_TRUE(!outG.getAdj().empty());
     for(const auto& v : outG.getAdj()) {
         for(const auto& e : v.second) {
@@ -729,48 +777,109 @@ TEST(Coloring, ColoringALoopWorks) {
         }
         EXPECT_TRUE(outG.isOK(v.first));
     }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
 }
 
 TEST(Coloring, ColoringAGraphWithALoopAndHangingEdgesWorks) {
     auto g = generateGraphWithOneLoopAndSomeHangingEges();
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
     auto outG = generateEmptyGraph();
-    g.color(outG);
+    EXPECT_TRUE(g.color(outG));
     EXPECT_TRUE(!outG.getAdj().empty());
-    int i = 0;
     for(const auto& v : outG.getAdj()) {
         for(const auto& e : v.second) {
-            EXPECT_NE(0, e.color)  << i++;
+            EXPECT_NE(0, e.color);
         }
         EXPECT_TRUE(outG.isOK(v.first));
     }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
 }
 
 TEST(Coloring, ColoringAGraphWithTwoLoopsAndHangingEdgesWorks) {
     auto g = generateGraphTwoLoopsAndHangingEdges();
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
     auto outG = generateEmptyGraph();
-    g.color(outG);
+    EXPECT_TRUE(g.color(outG));
     EXPECT_TRUE(!outG.getAdj().empty());
-    int i = 0;
     for(const auto& v : outG.getAdj()) {
         for(const auto& e : v.second) {
-            EXPECT_NE(0, e.color)  << i++;
+            EXPECT_NE(0, e.color);
         }
         EXPECT_TRUE(outG.isOK(v.first));
     }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
 }
 
-TEST(Coloring, ColoringAGraphWithTwoLoopsHangingEdgesAndTwoConnections) {
+TEST(Coloring, DISABLED_ColoringAGraphWithTwoLoopsHangingEdgesAndTwoConnections) {
     auto g = generateGraphTwoLoopsHangingEdgesAndTwoConnections();
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
     auto outG = generateEmptyGraph();
-    g.color(outG);
+    EXPECT_TRUE(g.color(outG));
     EXPECT_TRUE(!outG.getAdj().empty());
-    int i = 0;
     for(const auto& v : outG.getAdj()) {
         for(const auto& e : v.second) {
-            EXPECT_NE(0, e.color)  << i++;
+            EXPECT_NE(0, e.color);
         }
         EXPECT_TRUE(outG.isOK(v.first));
     }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
+}
+
+TEST(Coloring, ColoringACompleteGraphK4Works) {
+    auto g = generateGraphK4();
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
+    auto outG = generateEmptyGraph();
+    EXPECT_TRUE(g.color(outG));
+    EXPECT_TRUE(!outG.getAdj().empty());
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
+}
+
+TEST(Coloring, ColoringATriangleWithTwoConstraintsWorks) {
+    auto g = generateTriangleGraph();
+    g.addVertexConstraint(1, 10);
+    g.addVertexConstraint(2, 9);
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
+    auto outG = generateEmptyGraph();
+    EXPECT_TRUE(g.color(outG));
+    EXPECT_TRUE(!outG.getAdj().empty());
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
+}
+
+TEST(Coloring, ColoringATriangleWithThreeConstraintsWorks) {
+    auto g = generateTriangleGraph();
+    g.addVertexConstraint(1, 10);
+    g.addVertexConstraint(2, 11);
+    g.addVertexConstraint(3, 12);
+    const int edgesBefore = g.numEdges(), verticesBefore = g.getAdj().size();
+    auto outG = generateEmptyGraph();
+    EXPECT_TRUE(g.color(outG));
+    EXPECT_TRUE(!outG.getAdj().empty());
+    for(const auto& v : outG.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_TRUE(outG.isOK(v.first));
+    }
+    EXPECT_EQ(edgesBefore, outG.numEdges());
+    EXPECT_EQ(verticesBefore, outG.getAdj().size());
 }
 
 TEST(Coloring, DeterminingIfVertexIsColoredOKWorks) {
@@ -778,7 +887,7 @@ TEST(Coloring, DeterminingIfVertexIsColoredOKWorks) {
     g.colorEdge(2, 3, 1);
     g.colorEdge(3, 4, 2);
     EXPECT_TRUE(g.isOK(3));
-    EXPECT_FALSE(g.isOK(4));
+    EXPECT_TRUE(g.isOK(4));
     g.colorEdge(6, 7, 1);
     g.colorEdge(7, 8, 3);
     EXPECT_FALSE(g.isOK(7));
@@ -788,6 +897,80 @@ TEST(Coloring, DeterminingIfEdgeExistsWorks) {
     auto g = generateSimpleLoopGraphWith10Vertices();
     EXPECT_TRUE(g.isEdge(3, 4));
     EXPECT_FALSE(g.isEdge(3, 5));
+}
+
+TEST(Cycle, FindingConstraintsOfCycleWithASingleConstraintReturnsThatConstraint) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    g.addVertexConstraint(3, 100);
+    const std::vector<int> indicesInCycle{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1};
+    std::vector<int> c = g.findConstrainedVerticesInCycle(indicesInCycle);
+    EXPECT_EQ(1, c.size());
+    EXPECT_EQ(3, c[0]);
+}
+
+TEST(Cycle, FindingConstraintsOfCycleWithAManyConstraintsReturnsThemAll) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    g.addVertexConstraint(3, 100);
+    g.addVertexConstraint(3, 200);
+    g.addVertexConstraint(4, 200);
+    g.addVertexConstraint(7, 200);
+    const std::vector<int> indicesInCycle{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1};
+    std::vector<int> c = g.findConstrainedVerticesInCycle(indicesInCycle);
+    EXPECT_EQ(3, c.size());
+}
+
+TEST(Cycle, FindingConstraintsInTriangleWithOneConstraintWorks) {
+    auto g = generateTriangleGraph();
+    g.addVertexConstraint(1, 100);
+    const std::vector<int> indicesInCycle{1, 2, 3, 1};
+    std::vector<int> c = g.findConstrainedVerticesInCycle(indicesInCycle);
+    EXPECT_EQ(1, c.size());
+}
+
+TEST(Cycle, SplittingACycleIntoTwoPathsWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    const std::vector<int> indicesInCycle{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1};
+    const std::vector<int> cutPoints{4, 8};
+    const auto paths = g.splitCycle(indicesInCycle, cutPoints);
+    EXPECT_EQ(2, paths.size());
+    EXPECT_EQ(5, paths[0].size());
+    EXPECT_EQ(7, paths[1].size());
+    const std::vector<std::vector<int> > expected{{4, 5, 6, 7, 8}, {8, 9, 10, 1, 2, 3, 4}};
+    EXPECT_TRUE(paths == expected);
+}
+
+TEST(Cycle, SplittingACycleIntoMultiplePathsWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    const std::vector<int> indicesInCycle{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1};
+    const std::vector<int> cutPoints{2, 4, 8};
+    const auto paths = g.splitCycle(indicesInCycle, cutPoints);
+    EXPECT_EQ(3, paths.size());
+    EXPECT_EQ(3, paths[0].size());
+    EXPECT_EQ(5, paths[1].size());
+    EXPECT_EQ(5, paths[1].size());
+    const std::vector<std::vector<int> > expected{{2, 3, 4}, {4, 5, 6, 7, 8}, 
+        {8, 9, 10, 1, 2}};
+    EXPECT_TRUE(paths == expected);
+}
+
+TEST(Misc, CountingNumEdgesWorks) {
+    auto g = generateSimpleLoopGraphWith10Vertices();
+    EXPECT_EQ(10, g.numEdges());
+}
+
+TEST(Forest, GettingPathsFromATreeWorks) {
+    auto g = generateSimpleTreeGraph();
+    const auto& path = g.findPath();
+    const std::vector<int> expected{1, 2, 3};
+    EXPECT_TRUE(expected == path);
+    auto tempG = generateEmptyGraph();
+    for(size_t i = 0; i < path.size()-1; i++) {
+        const int v1 = path[i], v2 = path[i+1];
+        g.moveEdgeToAnotherGraph(tempG, v1, v2);
+    }
+    const auto& path2 = g.findPath();
+    const std::vector<int> expected2{1, 4, 5, 6};
+    EXPECT_TRUE(expected2 == path2);
 }
 
 int main(int argc, char **argv) {
