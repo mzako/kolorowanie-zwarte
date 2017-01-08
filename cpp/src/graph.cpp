@@ -212,8 +212,6 @@ std::vector<int> Graph::legalColoringsOf(const int vertexIndex) const {
         if(highestColor != -1) {
             possibleColors.emplace_back(highestColor+1);
             possibleColors.emplace_back(highestColor+2);
-        } else if(highestColor == -1) {
-            possibleColors.emplace_back(1);
         }
     }
 
@@ -922,17 +920,49 @@ std::vector<int> Graph::findPath() {
         return {};
     }
 
-    const int startingVertexIdx = adj.begin()->first;
-    auto result = findPathRecur(startingVertexIdx, startingVertexIdx);
-    if(!result.empty()) {
-        std::reverse(result.begin(), result.end());
-    }
+    std::vector<int> result;
 
-    std::cout<< "Found path: ";
-    for(const int a : result) {
-        std::cout << a << ", ";
+    // try to find a constrained vertex
+    int startingVertexIdx = -1;
+    for(const auto& v : adj) {
+        const auto& cons = getAllVertexConstraints(v.first);
+        if(!cons.empty()) {
+            startingVertexIdx = v.first;
+            break;
+        }
     }
-    std::cout << std::endl;
+    
+    if(startingVertexIdx != -1) {
+        // found a constrained vertex
+        // try to find a path ending with another constrained vertex
+        result = findPathRecur(startingVertexIdx, startingVertexIdx, true);
+        if(result.empty()) {
+            // not found, find a path ending with any vertex
+            // cleanup labels
+            for(auto& keyval : labels) {
+                keyval.second = false;
+            }
+            result = findPathRecur(startingVertexIdx, startingVertexIdx, false);
+            std::cout << "Found a path constrained on one end" << std::endl;
+        } else if(verbose) std::cout << "Found a path constrained on both ends" 
+                                     << std::endl;
+    } else {
+        // didn't find constrained vertex, start with any
+        startingVertexIdx = adj.begin()->first;
+        result = findPathRecur(startingVertexIdx, startingVertexIdx, false);
+    }  
+
+    if(result.empty()) {
+        std::cout << "No path found" << std::endl;
+    } else {
+        std::reverse(result.begin(), result.end());
+
+        std::cout<< "Found path: ";
+        for(const int a : result) {
+            std::cout << a << ", ";
+        }
+        std::cout << std::endl;
+    }
 
     // cleanup labels
     for(auto& keyval : labels) {
@@ -942,12 +972,23 @@ std::vector<int> Graph::findPath() {
 }
 
 std::vector<int> Graph::findPathRecur(const int startingVertexIdx, 
-    const int currentVertexIdx) {
+    const int currentVertexIdx, const bool mustEndWithConstrained) {
     labels[currentVertexIdx] = true;
+
+    const auto& cons = getAllVertexConstraints(currentVertexIdx);
+    if(startingVertexIdx != currentVertexIdx && mustEndWithConstrained && !cons.empty()) {
+        return {currentVertexIdx};
+    }
+
     const auto& edges = adj.at(currentVertexIdx);
+
     if(startingVertexIdx != currentVertexIdx && edges.size() == 1) {
         // leaf found
-        return {currentVertexIdx};
+        if(mustEndWithConstrained && cons.empty()) {
+            return {};
+        } else {
+            return {currentVertexIdx};
+        }
     }
 
     for(auto& edge : edges) {
@@ -957,12 +998,13 @@ std::vector<int> Graph::findPathRecur(const int startingVertexIdx,
             continue;
         }
 
-        auto result = findPathRecur(startingVertexIdx, neighbourIdx);
+        auto result = findPathRecur(startingVertexIdx, neighbourIdx,
+            mustEndWithConstrained);
         if(!result.empty()) {
             result.emplace_back(currentVertexIdx);
             // return the first branch since we're looking just for paths
             return result;
         }
     }
-
+    return {};
 }

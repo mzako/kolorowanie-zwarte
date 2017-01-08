@@ -59,7 +59,7 @@ private:
     Edge* findHangingEdge();
     void printGraphs(const Graph& temp, const Graph& out) const;
     std::vector<int> findPathRecur(const int startingVertexIdx, 
-        const int currentVertexIdx);
+        const int currentVertexIdx, const bool mustEndWithConstrained);
 
     AdjList adj;
     VertexLabels labels;

@@ -564,6 +564,19 @@ TEST(Cycle, FindingCycleInTreeReturnsEmpty) {
     EXPECT_EQ(0, cycle.size());
 }
 
+TEST(Forest, ColoringATreeWithSingleEdgeWorks) {
+    auto g = generateEmptyGraph();
+    g.addEdge(Edge(1, 2, 0));
+    g.colorAsForest();
+    for(const auto& v : g.getAdj()) {
+        for(const auto& e : v.second) {
+            EXPECT_NE(0, e.color);
+        }
+        EXPECT_FALSE(g.areGaps(v.first));
+        EXPECT_TRUE(g.isOK(v.first));
+    }
+}
+
 TEST(Forest, ColoringATreeWorks) {
     auto g = generateSimpleTreeGraph();
     g.colorAsForest();
@@ -958,7 +971,7 @@ TEST(Misc, CountingNumEdgesWorks) {
     EXPECT_EQ(10, g.numEdges());
 }
 
-TEST(Forest, GettingPathsFromATreeWorks) {
+TEST(Pathfinding, GettingPathsFromATreeWihtNoConstraintsWorks) {
     auto g = generateSimpleTreeGraph();
     const auto& path = g.findPath();
     const std::vector<int> expected{1, 2, 3};
@@ -971,6 +984,22 @@ TEST(Forest, GettingPathsFromATreeWorks) {
     const auto& path2 = g.findPath();
     const std::vector<int> expected2{1, 4, 5, 6};
     EXPECT_TRUE(expected2 == path2);
+}
+
+TEST(Pathfinding, GettingPathsFromATreeReturnsMostConstrainedPathWith2First) {
+    auto g = generateSimpleTreeGraph();
+    g.addVertexConstraint(3, 1);
+    g.addVertexConstraint(7, 1);
+    const auto& path = g.findPath();
+    EXPECT_EQ(3, path.front());
+    EXPECT_EQ(7, path.back());
+}
+
+TEST(Pathfinding, GettingPathFromTreeReturnsMostContrainedPathWith1ConstraintFirst) {
+    auto g = generateSimpleTreeGraph();
+    g.addVertexConstraint(8, 1);
+    const auto& path= g.findPath();
+    EXPECT_EQ(8, path.front());
 }
 
 int main(int argc, char **argv) {
