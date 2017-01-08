@@ -923,32 +923,33 @@ std::vector<int> Graph::findPath() {
     std::vector<int> result;
 
     // try to find a constrained vertex
-    int startingVertexIdx = -1;
+    bool found = false;
     for(const auto& v : adj) {
         const auto& cons = getAllVertexConstraints(v.first);
         if(!cons.empty()) {
-            startingVertexIdx = v.first;
+            const int startingVertexIdx = v.first;
+
+            result = findPathRecur(startingVertexIdx, startingVertexIdx, true);
+            if(result.empty()) {
+                // not found, find a path ending with any vertex
+                // cleanup labels
+                for(auto& keyval : labels) {
+                    keyval.second = false;
+                }
+                result = findPathRecur(startingVertexIdx, startingVertexIdx, false);
+                std::cout << "Found a path constrained on one end" << std::endl;
+            } else {
+                if(verbose) std::cout << "Found a path constrained on both ends" 
+                                      << std::endl;
+            }
+            found = true;
             break;
         }
     }
     
-    if(startingVertexIdx != -1) {
-        // found a constrained vertex
-        // try to find a path ending with another constrained vertex
-        result = findPathRecur(startingVertexIdx, startingVertexIdx, true);
-        if(result.empty()) {
-            // not found, find a path ending with any vertex
-            // cleanup labels
-            for(auto& keyval : labels) {
-                keyval.second = false;
-            }
-            result = findPathRecur(startingVertexIdx, startingVertexIdx, false);
-            std::cout << "Found a path constrained on one end" << std::endl;
-        } else if(verbose) std::cout << "Found a path constrained on both ends" 
-                                     << std::endl;
-    } else {
+    if(!found) {
         // didn't find constrained vertex, start with any
-        startingVertexIdx = adj.begin()->first;
+        const int startingVertexIdx = adj.begin()->first;
         result = findPathRecur(startingVertexIdx, startingVertexIdx, false);
     }  
 
