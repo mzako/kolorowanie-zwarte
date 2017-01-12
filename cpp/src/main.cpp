@@ -1,6 +1,14 @@
+/**
+ *  @author Michal Kostrzewa
+ *  @author Michal Zakowski
+ */
+
 #include <iostream>
 #include "../include/graph.h"
 
+/**
+ * Starting point of the program
+ */
 int main(int argc, char *argv[]) {
     if (argc < 3 || argc > 5)
         std::cout<<"usage: "<< argv[0] <<" <input file> <output file> [--dontcolor] [--verbose]" << std::endl;

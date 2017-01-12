@@ -1,3 +1,8 @@
+/**
+ *  @author Michal Kostrzewa
+ *  @author Michal Zakowski
+ */
+
 #include "../include/graph.h"
 
 #include <fstream>

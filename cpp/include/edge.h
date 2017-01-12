@@ -1,6 +1,14 @@
+/**
+ *  @author Michal Kostrzewa
+ *  @author Michal Zakowski
+ */
+
 #ifndef EDGE_H
 #define EDGE_H
 
+/**
+ * Structure representing edge in a graph. Contains color.
+ */
 struct Edge {
     int v1;
     int v2;

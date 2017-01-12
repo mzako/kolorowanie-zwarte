@@ -1,3 +1,8 @@
+/**
+ *  @author Michal Kostrzewa
+ *  @author Michal Zakowski
+ */
+
 #include <gtest/gtest.h>
 #include <algorithm>
 
